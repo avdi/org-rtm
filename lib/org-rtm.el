@@ -30,7 +30,10 @@
 (require 'xmlgen)
 (require 'xml)
 
-(setq rtm-work-buffer-name "*rtm*")
+(defconst rtm-work-buffer-name "*rtm*")
+(defconst rtm-api-url          "http://api.rememberthemilk.com")
+(defconst rtm-auth-url         (concat rtm-api-url "/services/auth/"))
+(defconst rtm-rest-url         (concat rtm-api-url "/services/rest/"))
 
 (defstruct rtm-session
   "A RememberTheMilk session"
@@ -41,13 +44,35 @@
   ;; (the alternative is JSON-RPC).  There's nothing remotely RESTful about it,
   ;; but we humor them.
   (format   "rest")
-  (endpoint "http://api.rememberthemilk.com/services/rest/"))
+  (endpoint rtm-rest-url))
 
 (defun rtm-session-call-method (session method)
   "Call an RtM method (via HTTP) in the context of SESSION"
   (let* ((response (url-retrieve-synchronously (rtm-construct-url session method)))
         (response-data (rtm-parse-response response)))
     response-data))
+
+(defun rtm-construct-unsigned-request-url (session method &rest params)
+  "Construct a URL for calling an unsigned RtM method"
+  (let* ((endpoint   (rtm-session-endpoint session))
+         (api-key    (rtm-session-api-key session))
+         (format     (rtm-session-format session))
+         (method     (if (symbolp method) (symbol-name method) method))
+         (all-params (append `(("method" . ,method)
+                               ("format" . ,format)
+                               ("api_key" . ,api-key))
+                             params))
+         (param-pairs (mapcar 'rtm-format-param all-params))
+         (query (rtm-join-params param-pairs)))
+    (concat endpoint "?" query)))
+
+(defun rtm-format-param (param)
+  (let ((key (car param))
+        (value (cdr param)))
+    (concat key "=" value)))
+
+(defun rtm-join-params (params)
+  (reduce (lambda (left right) (concat left "&" right)) params))
 
 (defun rtm-construct-url (session method)
   (concat (rtm-session-endpoint session)
@@ -64,7 +89,7 @@
       (insert response)
       (xml-parse-region (point-min) (point-max))))
 
-(defun rtm-api-sig (secret &rest params)
+(defun rtm-api-sig (secret params)
   (let* ((sorted-params
           (sort params
                 (lambda (lhs rhs) (string< (car lhs) (car rhs)))))

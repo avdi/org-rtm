@@ -66,8 +66,25 @@
          (let ((session (make-rtm-session :secret "pssst")))
            (rtm-session-secret session)))
  ;; See https://www.rememberthemilk.com/services/api/authentication.rtm
+ )
+
+(expectations
+ (desc "rtm-construct-unsigned-request-url")
+ (expect "http://example.com/?method=foo&format=rest&api_key=KEY&abc=123&xyz=987"
+         (stub rtm-session-api-key => "KEY")
+         (stub rtm-session-format  => "rest")
+         (stub rtm-session-endpoint => "http://example.com/")
+         (let ((session (make-rtm-session)))
+           (rtm-construct-unsigned-request-url
+            session
+            'foo
+            '("abc" . "123") '("xyz" . "987")))))
+
+
+(expectations
+ (desc "rtm-api-sig")
  (expect "82044aae4dd676094f23f1ec152159ba"
-         (rtm-api-sig "BANANAS" '("yxz" . "foo") '("feg" . "bar") '("abc" . "baz"))))
+         (rtm-api-sig "BANANAS" '(("yxz" . "foo") ("feg" . "bar") ("abc" . "baz")))))
 
 (provide 'org-rtm-spec)
 ;;; org-rtm-spec.el ends here
