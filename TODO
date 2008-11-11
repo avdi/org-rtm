@@ -1,0 +1,11 @@
+# -*- mode: org -*-
+#+Title:        TODO for org-rtm mode
+#+AUTHOR:       Avdi Grimm
+#+EMAIL:        avdi@avdi.org
+
+# Configuration:
+#+STARTUP:      odd
+#+STARTUP:      hi
+#+STARTUP:      hidestars
+
+* TODO Submit org-mode task to RtM inbox
